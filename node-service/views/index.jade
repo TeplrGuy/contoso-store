@@ -31,15 +31,100 @@ block content
 
   br
   br
+  h2= 'Create inventory item'
+  br
+  br
+  form(id='inventory-form')
+    div.input
+      span.label Id
+      input(type='text', name='id', placeholder='foo', required='required')
+    div.input
+      span.label Item
+      input(type='text', name='item', placeholder='Widget', required='required')
+    div.input
+      span.label Location
+      input(type='text', name='location', placeholder='Seattle', required='required')
+    div.input
+      span.label Priority
+      input(type='text', name='priority', placeholder='Standard', required='required')
+    div.input
+      span.label Price (optional)
+      input(type='number', name='price_value', placeholder='29.99', step='0.01', min='0')
+    div.input
+      span.label Currency (optional)
+      input(type='text', name='price_currency', placeholder='USD', pattern='[A-Z]{3}', maxlength='3')
+    div.actions
+      input(type='submit', value='Create')
+  
+  div(id='inventory-result', style='margin-top: 20px; padding: 10px; border: 1px solid #ccc; display: none;')
+
+  br
+  br
   h2= 'View inventory status'
   br
   br
-  form(action='/inventory', method='get')
+  form(action='/inventory', method='get', target='_blank')
     div.input
       span.label Id
       input(type='text', name='id', placeholder='foo', required='required')
     div.actions
       input(type='submit', value='View')
+
+  script.
+    document.getElementById('inventory-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const inventory = {
+        id: formData.get('id'),
+        item: formData.get('item'),
+        location: formData.get('location'),
+        priority: formData.get('priority')
+      };
+      
+      // Only include price if both value and currency are provided
+      const priceValue = formData.get('price_value');
+      const priceCurrency = formData.get('price_currency');
+      if (priceValue && priceCurrency) {
+        inventory.price = {
+          value: parseFloat(priceValue),
+          currency: priceCurrency.toUpperCase()
+        };
+      }
+      
+      try {
+        const response = await fetch('/inventory', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(inventory)
+        });
+        
+        const result = await response.json();
+        const resultDiv = document.getElementById('inventory-result');
+        
+        if (response.ok) {
+          resultDiv.style.display = 'block';
+          resultDiv.style.backgroundColor = '#d4edda';
+          resultDiv.style.color = '#155724';
+          resultDiv.innerHTML = '<strong>Success!</strong> Inventory item created:<br><pre>' + 
+                               JSON.stringify(result, null, 2) + '</pre>';
+          e.target.reset();
+        } else {
+          resultDiv.style.display = 'block';
+          resultDiv.style.backgroundColor = '#f8d7da';
+          resultDiv.style.color = '#721c24';
+          resultDiv.innerHTML = '<strong>Error!</strong> ' + (result.error || 'Failed to create inventory');
+        }
+      } catch (error) {
+        const resultDiv = document.getElementById('inventory-result');
+        resultDiv.style.display = 'block';
+        resultDiv.style.backgroundColor = '#f8d7da';
+        resultDiv.style.color = '#721c24';
+        resultDiv.innerHTML = '<strong>Error!</strong> ' + error.message;
+      }
+    });
 
   //- Uncomment below to enable order deletion
   //- h2= 'Delete Order'

@@ -5,7 +5,59 @@
     "title": "Store API",
     "version": "0.1.0"
   },
-  "definitions": {},
+  "definitions": {
+    "Price": {
+      "type": "object",
+      "required": ["value", "currency"],
+      "properties": {
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Price value (non-negative)"
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "3-letter uppercase currency code (e.g., USD, EUR)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "InventoryItem": {
+      "type": "object",
+      "required": ["id", "item", "location", "priority"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inventory item"
+        },
+        "item": {
+          "type": "string",
+          "description": "Item name"
+        },
+        "location": {
+          "type": "string",
+          "description": "Storage location"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority level"
+        },
+        "price": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/Price"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Optional price information"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
   "paths": {
     "/": {
       "get": {
@@ -69,21 +121,53 @@
     },
     "/inventory": {
       "get": {
-        "description": "Get orders",
+        "description": "Get inventory item by ID",
         "parameters": [
           {
             "name": "id",
             "type": "string",
             "required": true,
-            "in": "query"
+            "in": "query",
+            "description": "Inventory item ID"
           }
         ],
         "responses": {
           "200": {
             "description": "OK",
             "schema": {
-              "type": "object"
+              "$ref": "#/definitions/InventoryItem"
             }
+          },
+          "404": {
+            "description": "Inventory item not found"
+          }
+        }
+      },
+      "post": {
+        "description": "Create or update inventory item",
+        "parameters": [
+          {
+            "name": "inventory",
+            "in": "body",
+            "required": true,
+            "description": "Inventory item data",
+            "schema": {
+              "$ref": "#/definitions/InventoryItem"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Inventory item created successfully",
+            "schema": {
+              "$ref": "#/definitions/InventoryItem"
+            }
+          },
+          "400": {
+            "description": "Invalid request payload"
+          },
+          "422": {
+            "description": "Validation error (e.g., invalid price)"
           }
         }
       }
